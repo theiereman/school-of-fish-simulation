@@ -25,6 +25,7 @@ export default class Time extends EventDispatcher<EventType> {
     this.dispatchEvent({
       type: "tick",
       current: this.current,
+      delta: this.delta,
     });
 
     window.requestAnimationFrame(() => {

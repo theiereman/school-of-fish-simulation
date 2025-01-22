@@ -47,7 +47,7 @@ export default class App {
     });
 
     this.time.addEventListener("tick", (e) => {
-      this.tick(e.current);
+      this.tick(e.delta);
     });
   }
 
@@ -56,12 +56,12 @@ export default class App {
     this.renderer.onResize();
   }
 
-  tick(currentTime) {
+  tick(delta) {
     this.camera.onTick();
     this.renderer.onTick();
 
     if (this.world) {
-      this.world.onTick(currentTime);
+      this.world.onTick(delta);
     }
   }
 }

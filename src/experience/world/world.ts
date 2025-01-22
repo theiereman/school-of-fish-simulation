@@ -20,7 +20,7 @@ export default class World implements IUpdatable {
     this.fish = new Fish(scene);
   }
 
-  onTick(currentTime) {
-    this.fish.onTick(currentTime);
+  onTick(delta) {
+    this.fish.onTick(delta);
   }
 }
