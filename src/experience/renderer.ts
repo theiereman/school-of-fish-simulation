@@ -1,36 +1,18 @@
-import { WebGLRenderer, Scene } from "three";
-import Sizes from "./utils/sizes";
-import Camera from "./camera";
-import IUpdatable from "./interfaces/iupdatable";
+import { WebGLRenderer } from "three";
+import App from "./app";
 
-export default class Renderer implements IUpdatable {
-  private canvas: HTMLCanvasElement;
-  private sizes: Sizes;
-  private scene: Scene;
-  private camera: Camera;
-  private renderer: WebGLRenderer;
-
-  constructor(
-    canvas: HTMLCanvasElement,
-    sizes: Sizes,
-    scene: Scene,
-    camera: Camera
-  ) {
-    this.canvas = canvas;
-    this.sizes = sizes;
-    this.scene = scene;
-    this.camera = camera;
-    this.renderer = new WebGLRenderer({ canvas: this.canvas });
-
-    this.renderer.setSize(this.sizes.width, this.sizes.height);
+export default class Renderer extends WebGLRenderer {
+  constructor() {
+    super({ canvas: App.Instance.canvas });
+    this.setSize(App.Instance.sizes.width, App.Instance.sizes.height);
   }
 
   onResize() {
-    this.renderer.setSize(this.sizes.width, this.sizes.height);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.setSize(App.Instance.sizes.width, App.Instance.sizes.height);
+    this.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   }
 
   onTick() {
-    this.renderer.render(this.scene, this.camera.camera);
+    this.render(App.Instance.scene, App.Instance.camera);
   }
 }
