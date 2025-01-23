@@ -7,7 +7,7 @@ import App from "../app";
 export default class World implements IUpdatable {
   environment: Environment;
   scene: Scene;
-  fish: Fish;
+  fishes: Fish[] = [];
 
   constructor() {
     const box = new Mesh(
@@ -17,11 +17,15 @@ export default class World implements IUpdatable {
     // this.scene.add(box);
     this.environment = new Environment();
 
-    this.fish = new Fish();
-    App.Instance.scene.add(this.fish.model);
+    //fill the scene with 100 fishes
+    for (let i = 0; i < 99; i++) {
+      const fish = new Fish();
+      this.fishes.push(fish);
+      App.Instance.scene.add(fish.model);
+    }
   }
 
   onTick() {
-    this.fish.onTick();
+    this.fishes.forEach((fish) => fish.onTick());
   }
 }
