@@ -1,47 +1,24 @@
-import {
-  AxesHelper,
-  ConeGeometry,
-  Euler,
-  Mesh,
-  MeshStandardMaterial,
-  Scene,
-  Vector3,
-} from "three";
+import { BoxGeometry, Mesh, MeshStandardMaterial, Vector3 } from "three";
 import IUpdatable from "../interfaces/iupdatable";
-import App from "../app";
 import gsap from "gsap";
 
 export default class Fish implements IUpdatable {
   model: Mesh;
   speed: number;
   direction: Vector3;
-
   isTurning: boolean;
-  targetTurnDirection: Vector3;
 
   constructor() {
     this.model = new Mesh(
-      new ConeGeometry(0.5, 1, 32),
+      new BoxGeometry(0.3, 0.8, 1),
       new MeshStandardMaterial({ color: "white" })
     );
 
-    const axesHelper = new AxesHelper();
-    this.model.add(axesHelper);
-
-    this.speed = 0.01;
+    this.speed = 0.05;
     this.direction = new Vector3(1, 0, 0);
-    this.targetTurnDirection = this.direction.clone();
   }
 
-  adjustDirection(): void {
-    this.direction.x += Math.random() * 0.1 - 0.05;
-    this.direction.y += Math.random() * 0.1 - 0.05;
-
-    // Normalize the direction vector to maintain consistent speed
-    this.direction.normalize();
-  }
-
-  triggerTurn(): void {
+  turn(): void {
     if (this.isTurning) return;
 
     const randomDirection = new Vector3(
@@ -50,34 +27,30 @@ export default class Fish implements IUpdatable {
       Math.random() - 0.5
     ).normalize();
 
-    this.isTurning = true; // Mark as turning
+    this.isTurning = true;
 
-    // Smoothly interpolate to the new direction over 2 seconds
     gsap.to(this.direction, {
       x: randomDirection.x,
       y: randomDirection.y,
-      duration: 2, // Duration of the turn in seconds
+      z: randomDirection.z,
+      duration: 2,
       onUpdate: () => {
-        this.direction.normalize(); // Keep the direction normalized during the turn
+        this.direction.normalize();
+        this.model.lookAt(this.model.position.clone().add(this.direction));
       },
       onComplete: () => {
-        this.isTurning = false; // Reset the turning flag
+        this.isTurning = false;
       },
     });
   }
 
   moveForward() {
     this.model.position.add(this.direction.clone().multiplyScalar(this.speed));
-
-    const angle = Math.atan2(this.direction.y, this.direction.x);
-    this.model.rotation.z = angle - Math.PI / 2;
-
-    this.model.rotation.y = Math.sin(App.Instance.time.current * 0.02) * 0.05; //fish wiggle effect
   }
 
   onTick(): void {
-    if (Math.random() < 0.01) {
-      this.triggerTurn();
+    if (Math.random() < 0.1) {
+      this.turn();
     }
     this.moveForward();
   }
