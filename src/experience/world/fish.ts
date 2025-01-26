@@ -1,20 +1,30 @@
 import { BoxGeometry, Mesh, MeshStandardMaterial, Vector3 } from "three";
 import IUpdatable from "../interfaces/iupdatable";
-import gsap from "gsap";
 import App from "../app";
 
 export default class Fish implements IUpdatable {
   model: Mesh;
-  speed: number;
-  direction: Vector3;
+
+  private maxSpeed: number = 0.3;
+
+  public get direction(): Vector3 {
+    return this.model.getWorldDirection(new Vector3());
+  }
+  public set direction(value: Vector3) {
+    this.model.lookAt(this.model.position.clone().add(value));
+  }
+
+  public get position(): Vector3 {
+    return this.model.position;
+  }
+  public set position(value: Vector3) {
+    this.model.position.add(value);
+  }
+
   isTurning: boolean = false;
 
-  followingTriggerDistance: number = 6; //minimal distance at which the fish follows another fish
-  avoidingTriggerDistance: number = 0.2; //minimal distance at which the fish avoids another fish
-
-  _shouldFollow = false;
-
-  _currentlyFollowing: boolean = false;
+  viewDistance: number = 3; //distance at which the fish sees another fish
+  avoidingDistance: number = 1; //distance at which the fish avoids another fish
 
   constructor() {
     this.model = new Mesh(
@@ -22,64 +32,69 @@ export default class Fish implements IUpdatable {
       new MeshStandardMaterial({ color: "white" })
     );
 
-    this.model.position.set(
-      Math.random() * 2 * (Math.random() < 0.5 ? 1 : -1),
-      Math.random() * 2 * (Math.random() < 0.5 ? 1 : -1),
-      Math.random() * 2 * (Math.random() < 0.5 ? 1 : -1)
+    this.position.set(
+      Math.random() * 5 * (Math.random() < 0.5 ? 1 : -1),
+      Math.random() * 5 * (Math.random() < 0.5 ? 1 : -1),
+      Math.random() * 5 * (Math.random() < 0.5 ? 1 : -1)
     );
 
-    this.model.rotation.setFromVector3(this.generateRandomDirection());
-
-    this.speed = 0.01;
-    this.direction = new Vector3(1, 0, 0);
+    this.direction = this.generateRandomDirection();
   }
 
-  private get currentlyFollowing(): boolean {
-    return this._currentlyFollowing;
+  getNeighbours(fishes: Fish[]): Fish[] {
+    return fishes.filter(
+      (otherFish) =>
+        otherFish !== this &&
+        this.position.distanceTo(otherFish.position) < this.viewDistance
+    );
   }
 
-  private set currentlyFollowing(value: boolean) {
-    if (value === true) {
-      (this.model.material as MeshStandardMaterial).color.setColorName("red");
-    } else {
-      (this.model.material as MeshStandardMaterial).color.setColorName("white");
-    }
-    this._currentlyFollowing = value;
-  }
+  computeSeparationVector(neighbours: Fish[]): Vector3 {
+    const separationVector = new Vector3(0, 0, 0);
 
-  //-- debug checkbox to trigger following behavior --
-  public set shouldFollow(value: boolean) {
-    this._shouldFollow = value;
-    if (this.shouldFollow === false) this.currentlyFollowing = false;
-  }
+    neighbours.forEach((neighbour) => {
+      const distance = this.position.distanceTo(neighbour.position);
 
-  public get shouldFollow(): boolean {
-    return this._shouldFollow;
-  }
-  //-- debug checkbox to trigger following behavior --
-
-  checkOtherFishes(fishes: Fish[]) {
-    fishes.forEach((otherFish) => {
-      if (otherFish === this) return;
-      const distance = this.model.position.distanceTo(otherFish.model.position);
-
-      if (
-        this.shouldFollow == true &&
-        distance < this.followingTriggerDistance
-      ) {
-        this.rotateSmoothlyToVector3(otherFish.model.position);
-        this.currentlyFollowing = true;
-      } else {
-        this.currentlyFollowing = false;
-        //random movements
-        if (Math.random() < 0.001) {
-          this.rotateSmoothlyToVector3(this.generateRandomDirection());
-        }
+      if (distance < this.avoidingDistance) {
+        separationVector.add(
+          this.position
+            .clone()
+            .sub(neighbour.position)
+            .normalize()
+            .divideScalar(distance)
+        );
       }
     });
+
+    return separationVector;
   }
 
-  //TODO : generate random rotation starting from model position, avoids putting 1000 arbitrary value
+  computeAlignementVector(neighbours: Fish[]): Vector3 {
+    const alignementVector = new Vector3(0, 0, 0);
+
+    neighbours.forEach((neighbour) => {
+      alignementVector.add(neighbour.direction);
+    });
+
+    return alignementVector;
+  }
+
+  computeCohesionVector(neighbours: Fish[]): Vector3 {
+    let cohesionVector = this.position.clone();
+
+    neighbours.forEach((neighbour) => {
+      cohesionVector.add(neighbour.position);
+    });
+
+    cohesionVector =
+      neighbours.length > 0
+        ? cohesionVector.clone().divideScalar(neighbours.length)
+        : cohesionVector;
+
+    return cohesionVector.sub(this.position);
+  }
+
+  //TODO : generate random rotation starting from model position, avoids putting 1000 as an arbitrary value
   generateRandomDirection(): Vector3 {
     const x = Math.random() * 1000 * (Math.random() > 0.5 ? 1 : -1);
     const y = Math.random() * 1000 * (Math.random() > 0.5 ? 1 : -1);
@@ -88,53 +103,20 @@ export default class Fish implements IUpdatable {
     return new Vector3(x, y, z);
   }
 
-  rotateSmoothlyToVector3(targetPosition: Vector3): void {
-    if (this.isTurning) return;
-
-    this.isTurning = true;
-
-    const directionToTarget = targetPosition
-      .clone()
-      .sub(this.model.position)
-      .normalize();
-
-    gsap.to(this.direction, {
-      x: directionToTarget.x,
-      y: directionToTarget.y,
-      z: directionToTarget.z,
-      duration: 0.01 / this.speed,
-      onUpdate: () => {
-        this.direction.normalize();
-      },
-      onComplete: () => {
-        this.isTurning = false;
-      },
-    });
-  }
-
-  getForwardDirection(): Vector3 {
-    return this.direction.clone();
-  }
-
-  lookForward() {
-    this.model.lookAt(
-      this.model.position.clone().add(this.getForwardDirection())
-    );
-  }
-
-  moveForward() {
-    const forwardDirection = this.getForwardDirection();
-    let val = this.model.position.add(
-      forwardDirection.multiplyScalar(this.speed)
-    );
-  }
-
   onTick(): void {
-    if (App.Instance.world.fishes) {
-      this.checkOtherFishes(App.Instance.world.fishes);
-    }
+    const neighbours = this.getNeighbours(App.Instance.world.fishes);
+    const separationVector = this.computeSeparationVector(neighbours);
+    const cohesionVector = this.computeCohesionVector(neighbours);
+    const alignementVector = this.computeAlignementVector(neighbours);
 
-    this.moveForward();
-    this.lookForward();
+    const targetVector3 = separationVector
+      .add(cohesionVector)
+      .add(alignementVector);
+
+    this.direction = targetVector3;
+    const limitedDirection = targetVector3
+      .normalize()
+      .multiplyScalar(Math.min(targetVector3.length(), this.maxSpeed));
+    this.position.add(limitedDirection);
   }
 }

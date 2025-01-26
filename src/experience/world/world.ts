@@ -9,8 +9,6 @@ export default class World implements IUpdatable {
   scene: Scene;
   fishes: Fish[] = [];
 
-  activateFollowing: boolean = false;
-  fishesSpeed: number = 1;
   constructor() {
     const box = new Mesh(
       new BoxGeometry(1, 1, 1),
@@ -18,24 +16,11 @@ export default class World implements IUpdatable {
     );
     this.environment = new Environment();
 
-    //fill the scene with 100 fishes
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 100; i++) {
       const fish = new Fish();
       this.fishes.push(fish);
       App.Instance.scene.add(fish.model);
     }
-
-    App.Instance.debug
-      .addIfActive(this, "activateFollowing")
-      ?.onChange((value) => {
-        this.fishes.forEach((fish) => (fish.shouldFollow = value));
-      });
-
-    App.Instance.debug
-      .addIfActive(this, "fishesSpeed")
-      ?.onFinishChange((value) =>
-        this.fishes.forEach((fish) => (fish.speed = value / 100))
-      );
   }
 
   onTick() {
