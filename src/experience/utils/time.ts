@@ -5,20 +5,21 @@ export default class Time extends EventDispatcher<EventType> {
   start: number;
   current: number;
   elapsed: number;
+  interval: number;
 
   constructor() {
     super();
 
     this.start = Date.now();
     this.current = this.start;
+    this.elapsed = 0;
+    this.interval = 1000 / 60; // 60 times per second (60 FPS)
 
     this.tick();
   }
 
   private tick() {
-    const currentTime: number = Date.now();
-    const delta = currentTime - this.current;
-    this.current = currentTime;
+    this.current = Date.now();
     this.elapsed = this.current - this.start;
 
     this.dispatchEvent({
@@ -26,8 +27,8 @@ export default class Time extends EventDispatcher<EventType> {
       current: this.current,
     });
 
-    window.requestAnimationFrame(() => {
+    setTimeout(() => {
       this.tick();
-    });
+    }, this.interval);
   }
 }
