@@ -5,7 +5,8 @@ import App from "../app";
 export default class Fish implements IUpdatable {
   model: Mesh;
 
-  private maxSpeed: number = 0.3;
+  private minSpeed: number = 0.05;
+  private maxSpeed: number = 0.1;
 
   public get direction(): Vector3 {
     return this.model.getWorldDirection(new Vector3());
@@ -114,9 +115,14 @@ export default class Fish implements IUpdatable {
       .add(alignementVector);
 
     this.direction = targetVector3;
-    const limitedDirection = targetVector3
-      .normalize()
-      .multiplyScalar(Math.min(targetVector3.length(), this.maxSpeed));
-    this.position.add(limitedDirection);
+
+    const speed = Math.min(
+      Math.max(targetVector3.length(), this.minSpeed),
+      this.maxSpeed
+    );
+
+    const newPosition = this.direction.normalize().multiplyScalar(speed);
+
+    this.position.add(newPosition);
   }
 }
