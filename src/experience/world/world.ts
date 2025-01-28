@@ -35,7 +35,7 @@ export default class World implements IUpdatable {
     fishTank.children.forEach((child) => this.obstacles.push(child as Mesh));
 
     //fishes creation
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 300; i++) {
       const fish = new Fish();
       this.fishes.push(fish);
       App.Instance.scene.add(fish.model);

@@ -5,8 +5,8 @@ import BoidBehavior from "../interfaces/boidBehavior";
 export default class Fish implements IUpdatable {
   model: Mesh;
 
-  private minSpeed: number = 0.05;
-  private maxSpeed: number = 0.1;
+  private minSpeed: number = 0.1;
+  private maxSpeed: number = 0.2;
   speed: number = this.minSpeed;
 
   private boidBehavior: BoidBehavior;
