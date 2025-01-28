@@ -7,7 +7,7 @@ export default class Camera extends PerspectiveCamera {
 
   constructor() {
     super(75, App.Instance.sizes.width / App.Instance.sizes.height, 0.1, 1000);
-    this.position.set(2, 2, 2);
+    this.position.set(20, 20, 20);
     App.Instance.scene.add(this);
     this.setOrbitControls();
   }

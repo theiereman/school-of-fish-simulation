@@ -1,18 +1,29 @@
-import {
-  BoxGeometry,
-  Mesh,
-  MeshStandardMaterial,
-  Raycaster,
-  Vector3,
-} from "three";
+import { BoxGeometry, Mesh, MeshStandardMaterial, Vector3 } from "three";
 import IUpdatable from "../interfaces/iupdatable";
-import gsap from "gsap";
+import BoidBehavior from "../interfaces/boidBehavior";
 
 export default class Fish implements IUpdatable {
   model: Mesh;
-  speed: number;
-  direction: Vector3;
-  isTurning: boolean;
+
+  private minSpeed: number = 0.1;
+  private maxSpeed: number = 0.2;
+  speed: number = this.minSpeed;
+
+  private boidBehavior: BoidBehavior;
+
+  public get direction(): Vector3 {
+    return this.model.getWorldDirection(new Vector3());
+  }
+  public set direction(value: Vector3) {
+    this.model.lookAt(this.model.position.clone().add(value));
+  }
+
+  public get position(): Vector3 {
+    return this.model.position;
+  }
+  public set position(value: Vector3) {
+    this.model.position.add(value);
+  }
 
   constructor() {
     this.model = new Mesh(
@@ -20,59 +31,39 @@ export default class Fish implements IUpdatable {
       new MeshStandardMaterial({ color: "white" })
     );
 
-    this.speed = 0.05;
-    this.direction = new Vector3(1, 0, 0);
-
-    //raycaster for collision detection
-    // const raycaster = new Raycaster();
-    // raycaster.set(this.model.position.clone(), this.direction.clone());
-  }
-
-  turn(): void {
-    if (this.isTurning) return;
-
-    const randomDirection = new Vector3(
-      Math.random() - 0.5,
-      Math.random() - 0.5,
-      Math.random() - 0.5
-    ).normalize();
-
-    this.isTurning = true;
-
-    gsap.to(this.direction, {
-      x: randomDirection.x,
-      y: randomDirection.y,
-      z: randomDirection.z,
-      duration: 2,
-      onUpdate: () => {
-        this.direction.normalize();
-        this.model.lookAt(this.getForwardDirection());
-      },
-      onComplete: () => {
-        this.isTurning = false;
-      },
-    });
-  }
-
-  getForwardDirection(distance: number = 1) {
-    return this.model.position
-      .clone()
-      .add(this.direction.clone().multiplyScalar(distance));
-  }
-
-  moveForward() {
-    const forwardDirection = this.getForwardDirection(this.speed);
-    this.model.position.set(
-      forwardDirection.x,
-      forwardDirection.y,
-      forwardDirection.z
+    this.position.set(
+      Math.random() * 10 * (Math.random() < 0.5 ? 1 : -1),
+      Math.random() * 10 * (Math.random() < 0.5 ? 1 : -1),
+      Math.random() * 10 * (Math.random() < 0.5 ? 1 : -1)
     );
+
+    this.direction = this.generateRandomDirection();
+    this.boidBehavior = new BoidBehavior(this);
+  }
+
+  generateRandomDirection(): Vector3 {
+    const x = Math.random() * 1000 * (Math.random() > 0.5 ? 1 : -1);
+    const y = Math.random() * 1000 * (Math.random() > 0.5 ? 1 : -1);
+    const z = Math.random() * 1000 * (Math.random() > 0.5 ? 1 : -1);
+
+    return new Vector3(x, y, z);
+  }
+
+  //sets the movement vector of the fish (direction and speed)
+  setMovementVector(movement: Vector3): void {
+    this.direction = movement.normalize();
+    this.speed = movement.length();
+  }
+
+  //moves forward to the current front direction
+  moveTowardsCurrentDirection(): void {
+    const v = Math.min(Math.max(this.speed, this.minSpeed), this.maxSpeed);
+    const newPosition = this.direction.normalize().multiplyScalar(v);
+    this.position.add(newPosition);
   }
 
   onTick(): void {
-    if (Math.random() < 0.1) {
-      this.turn();
-    }
-    this.moveForward();
+    this.moveTowardsCurrentDirection();
+    this.boidBehavior.update();
   }
 }

@@ -18,8 +18,8 @@ export default class Debug {
     this.ui.title("Debug");
   }
 
-  addIfActive(object: any, property: string) {
+  addIfActive(object: any, propertyName: string) {
     if (!this.active) return;
-    return this.ui.add(object, property);
+    return this.ui.add(object, propertyName);
   }
 }
