@@ -1,6 +1,5 @@
 import { BoxGeometry, Mesh, MeshStandardMaterial, Vector3 } from "three";
 import IUpdatable from "../interfaces/iupdatable";
-import App from "../app";
 import BoidBehavior from "../interfaces/boidBehavior";
 
 export default class Fish implements IUpdatable {
@@ -42,7 +41,6 @@ export default class Fish implements IUpdatable {
     this.boidBehavior = new BoidBehavior(this);
   }
 
-  //TODO : generate random rotation starting from model position, avoids putting 1000 as an arbitrary value
   generateRandomDirection(): Vector3 {
     const x = Math.random() * 1000 * (Math.random() > 0.5 ? 1 : -1);
     const y = Math.random() * 1000 * (Math.random() > 0.5 ? 1 : -1);

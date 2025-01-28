@@ -1,12 +1,4 @@
-import {
-  Box3,
-  BoxGeometry,
-  Intersection,
-  Mesh,
-  MeshBasicMaterial,
-  Raycaster,
-  Vector3,
-} from "three";
+import { Intersection, Mesh, Raycaster, Vector3 } from "three";
 import Fish from "../world/fish";
 import App from "../app";
 
@@ -21,7 +13,7 @@ class BoidBehavior {
   private separationDistance: number = 2;
 
   private obstacleAvoidanceDistance: number = 3; // Distance to start avoiding obstacles
-  private obstacleRepulsionStrength: number = 10; // Strength of the repulsion force
+  private obstacleRepulsionStrength: number = 5; // Strength of the repulsion force
 
   private getCohesionNeighbours(): Fish[] {
     return App.Instance.world.fishes.filter(
@@ -77,30 +69,46 @@ class BoidBehavior {
   ): Vector3 {
     const repulsion = new Vector3();
     obstaclesBoundingBoxes.forEach((obstacle) => {
-      const raycaster = new Raycaster();
-      // Create a ray from the fish to the obstacle
-      raycaster.set(
-        this.fish.position,
-        obstacle.position.clone().sub(this.fish.position).normalize()
-      );
+      const topRay = new Raycaster();
+      const botRay = new Raycaster();
+      const rightRay = new Raycaster();
+      const leftRay = new Raycaster();
+      const frontRay = new Raycaster();
+      const backRay = new Raycaster();
 
-      const distanceToObstacle: number = raycaster
-        .intersectObject(obstacle, false)
-        .map((intersection) => intersection.distance)[0];
+      topRay.set(this.fish.position, new Vector3(0, 1, 0));
+      botRay.set(this.fish.position, new Vector3(0, -1, 0));
+      rightRay.set(this.fish.position, new Vector3(1, 0, 0));
+      leftRay.set(this.fish.position, new Vector3(-1, 0, 0));
+      frontRay.set(this.fish.position, new Vector3(0, 0, 1));
+      backRay.set(this.fish.position, new Vector3(0, 0, -1));
 
-      if (distanceToObstacle > this.obstacleAvoidanceDistance) return repulsion;
+      const rays = [topRay, botRay, rightRay, leftRay, frontRay, backRay];
 
-      if (distanceToObstacle < this.obstacleAvoidanceDistance) {
-        const diff = this.fish.position
-          .clone()
-          .sub(obstacle.position)
-          .normalize();
-        repulsion.add(
-          diff.multiplyScalar(
-            this.obstacleRepulsionStrength / distanceToObstacle
-          )
-        );
-      }
+      rays.forEach((ray) => {
+        const intersections: Intersection = ray.intersectObject(
+          obstacle,
+          true
+        )[0];
+
+        const distanceToObstacle: number = intersections?.distance;
+        const pointOfIntersection: Vector3 = intersections?.point;
+
+        if (distanceToObstacle > this.obstacleAvoidanceDistance)
+          return repulsion;
+
+        if (distanceToObstacle < this.obstacleAvoidanceDistance) {
+          const diff = this.fish.position
+            .clone()
+            .sub(pointOfIntersection)
+            .normalize();
+          repulsion.add(
+            diff.multiplyScalar(
+              this.obstacleRepulsionStrength / distanceToObstacle
+            )
+          );
+        }
+      });
     });
     return repulsion;
   }

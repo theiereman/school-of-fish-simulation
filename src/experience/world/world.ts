@@ -3,6 +3,7 @@ import Environment from "./environment";
 import IUpdatable from "../interfaces/iupdatable";
 import Fish from "./fish";
 import App from "../app";
+import FishTank from "./fish_tank";
 
 export default class World implements IUpdatable {
   environment: Environment;
@@ -11,23 +12,27 @@ export default class World implements IUpdatable {
   obstacles: Mesh[] = [];
 
   constructor() {
-    //obstacles creation
-    for (let i = 0; i < 5; i++) {
-      const box = new Mesh(
-        new BoxGeometry(10, 10, 10),
-        new MeshStandardMaterial({ color: "red" })
-      );
+    // //obstacles creation
+    // for (let i = 0; i < 5; i++) {
+    //   const box = new Mesh(
+    //     new BoxGeometry(10, 10, 10),
+    //     new MeshStandardMaterial({ color: "red" })
+    //   );
 
-      //add the bounding box to the obstacles for the fishes to avoid
-      this.obstacles.push(box);
+    //   //add the bounding box to the obstacles for the fishes to avoid
+    //   this.obstacles.push(box);
 
-      box.position.set(
-        Math.random() * 20 * (Math.random() < 0.5 ? 1 : -1),
-        Math.random() * 20 * (Math.random() < 0.5 ? 1 : -1),
-        Math.random() * 20 * (Math.random() < 0.5 ? 1 : -1)
-      );
-      App.Instance.scene.add(box);
-    }
+    //   box.position.set(
+    //     Math.random() * 20 * (Math.random() < 0.5 ? 1 : -1),
+    //     Math.random() * 20 * (Math.random() < 0.5 ? 1 : -1),
+    //     Math.random() * 20 * (Math.random() < 0.5 ? 1 : -1)
+    //   );
+    //   App.Instance.scene.add(box);
+    // }
+
+    const fishTank = new FishTank(50, 30, 20).tank;
+    App.Instance.scene.add(fishTank);
+    fishTank.children.forEach((child) => this.obstacles.push(child as Mesh));
 
     //fishes creation
     for (let i = 0; i < 100; i++) {
