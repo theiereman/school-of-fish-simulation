@@ -1,4 +1,4 @@
-import { Vector3 } from "three";
+import { Box3, BoxGeometry, Mesh, MeshBasicMaterial, Vector3 } from "three";
 import Fish from "../world/fish";
 import App from "../app";
 
@@ -11,6 +11,9 @@ class BoidBehavior {
 
   private cohesionDistance: number = 5;
   private separationDistance: number = 2;
+
+  private obstacleAvoidanceDistance: number = 3; // Distance to start avoiding obstacles
+  private obstacleRepulsionStrength: number = 10; // Strength of the repulsion force
 
   private getCohesionNeighbours(): Fish[] {
     return App.Instance.world.fishes.filter(
@@ -61,19 +64,47 @@ class BoidBehavior {
     return cohesion;
   }
 
+  private computeObstacleRepulsionVector(
+    obstaclesBoundingBoxes: Mesh[]
+  ): Vector3 {
+    const repulsion = new Vector3();
+    obstaclesBoundingBoxes.forEach((obstacle) => {
+      const distanceFromFishToObstacle = this.fish.position.distanceTo(
+        obstacle.position
+      );
+
+      if (distanceFromFishToObstacle < this.obstacleAvoidanceDistance) {
+        const diff = this.fish.position
+          .clone()
+          .sub(obstacle.position)
+          .normalize();
+        repulsion.add(
+          diff.multiplyScalar(
+            this.obstacleRepulsionStrength / distanceFromFishToObstacle
+          )
+        );
+      }
+    });
+    return repulsion;
+  }
+
   public update(): void {
     const neighbours = this.getCohesionNeighbours();
     const separation = this.computeSeparationVector(neighbours);
     const alignment = this.computeAlignmentVector(neighbours);
     const cohesion = this.computeCohesionVector(neighbours);
+    const obstacleRepulsionVector = this.computeObstacleRepulsionVector(
+      App.Instance.world.obstacles
+    );
 
-    const direction = this.fish.direction
+    const newDirection = this.fish.direction
       .add(separation)
       .add(alignment)
       .add(cohesion)
-      .normalize();
+      .add(obstacleRepulsionVector)
+      .divideScalar(5); // Diviser par le nombre de vecteurs (4 vecteurs + direction initiale)
 
-    this.fish.direction = this.fish.direction.lerp(direction, 0.1);
+    this.fish.direction = this.fish.direction.lerp(newDirection, 0.1);
     this.fish.moveTowardsCurrentDirection();
   }
 }

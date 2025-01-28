@@ -1,4 +1,4 @@
-import { BoxGeometry, Mesh, MeshStandardMaterial, Scene } from "three";
+import { Box3, BoxGeometry, Mesh, MeshStandardMaterial, Scene } from "three";
 import Environment from "./environment";
 import IUpdatable from "../interfaces/iupdatable";
 import Fish from "./fish";
@@ -8,19 +8,35 @@ export default class World implements IUpdatable {
   environment: Environment;
   scene: Scene;
   fishes: Fish[] = [];
+  obstacles: Mesh[] = [];
 
   constructor() {
-    const box = new Mesh(
-      new BoxGeometry(1, 1, 1),
-      new MeshStandardMaterial({ color: "white" })
-    );
-    this.environment = new Environment();
+    //obstacles creation
+    for (let i = 0; i < 100; i++) {
+      const box = new Mesh(
+        new BoxGeometry(1, 1, 1),
+        new MeshStandardMaterial({ color: "red" })
+      );
 
+      //add the bounding box to the obstacles for the fishes to avoid
+      this.obstacles.push(box);
+
+      box.position.set(
+        Math.random() * 20 * (Math.random() < 0.5 ? 1 : -1),
+        Math.random() * 20 * (Math.random() < 0.5 ? 1 : -1),
+        Math.random() * 20 * (Math.random() < 0.5 ? 1 : -1)
+      );
+      App.Instance.scene.add(box);
+    }
+
+    //fishes creation
     for (let i = 0; i < 100; i++) {
       const fish = new Fish();
       this.fishes.push(fish);
       App.Instance.scene.add(fish.model);
     }
+
+    this.environment = new Environment();
   }
 
   onTick() {
