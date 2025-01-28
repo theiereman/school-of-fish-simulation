@@ -12,9 +12,9 @@ export default class World implements IUpdatable {
 
   constructor() {
     //obstacles creation
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 5; i++) {
       const box = new Mesh(
-        new BoxGeometry(1, 1, 1),
+        new BoxGeometry(10, 10, 10),
         new MeshStandardMaterial({ color: "red" })
       );
 

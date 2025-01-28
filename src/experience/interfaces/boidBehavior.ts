@@ -1,4 +1,12 @@
-import { Box3, BoxGeometry, Mesh, MeshBasicMaterial, Vector3 } from "three";
+import {
+  Box3,
+  BoxGeometry,
+  Intersection,
+  Mesh,
+  MeshBasicMaterial,
+  Raycaster,
+  Vector3,
+} from "three";
 import Fish from "../world/fish";
 import App from "../app";
 
@@ -69,18 +77,27 @@ class BoidBehavior {
   ): Vector3 {
     const repulsion = new Vector3();
     obstaclesBoundingBoxes.forEach((obstacle) => {
-      const distanceFromFishToObstacle = this.fish.position.distanceTo(
-        obstacle.position
+      const raycaster = new Raycaster();
+      // Create a ray from the fish to the obstacle
+      raycaster.set(
+        this.fish.position,
+        obstacle.position.clone().sub(this.fish.position).normalize()
       );
 
-      if (distanceFromFishToObstacle < this.obstacleAvoidanceDistance) {
+      const distanceToObstacle: number = raycaster
+        .intersectObject(obstacle, false)
+        .map((intersection) => intersection.distance)[0];
+
+      if (distanceToObstacle > this.obstacleAvoidanceDistance) return repulsion;
+
+      if (distanceToObstacle < this.obstacleAvoidanceDistance) {
         const diff = this.fish.position
           .clone()
           .sub(obstacle.position)
           .normalize();
         repulsion.add(
           diff.multiplyScalar(
-            this.obstacleRepulsionStrength / distanceFromFishToObstacle
+            this.obstacleRepulsionStrength / distanceToObstacle
           )
         );
       }
